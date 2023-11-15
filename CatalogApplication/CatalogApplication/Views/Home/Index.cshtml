@@ -1,8 +1,20 @@
-﻿@{
+﻿@using System.Web
+@model Catalog
+@{
     ViewData["Title"] = "Home Page";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+<h1>Folder - "@Model.Name"</h1>
+<ul>
+    @foreach (var catalog in @Model.ChildCatalogs)
+    {
+        <li><a href="@Context.Request.Path/@catalog.Name">@catalog.Name</a></li>
+        @* <li>@Html.ActionLink(@catalog.Name,"ShowCatalog",new{path = +"/"+catalog.Name})</li> *@
+    }
+</ul>
+@if (Model.Parent != null)
+{
+    @Html.ActionLink("Back", "RollBack", new { path = Context.Request.Path })
+    <span>|</span>
+    <a href="/">To Root</a>;
+}
