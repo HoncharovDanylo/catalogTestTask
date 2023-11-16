@@ -13,9 +13,16 @@
         @* <li>@Html.ActionLink(@catalog.Name,"ShowCatalog",new{path = +"/"+catalog.Name})</li> *@
     }
 </ul>
+
 @if (Model.Parent != null)
 {
+    <div>
     <a href="@HomeController.RollBackPath(Context.Request.Path)">Back</a>
     <span>|</span>
     <a href="/">To Root</a>;
+    </div>
 }
+<div>
+    <input id="design" type="file" webkitdirectory = "true" directory/>
+    <a href="/download">Download current structure</a>
+</div>

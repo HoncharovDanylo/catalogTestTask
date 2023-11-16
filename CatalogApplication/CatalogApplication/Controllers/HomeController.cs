@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.IO.Compression;
 using System.Text;
 using System.Web;
 using CatalogApplication.Data;
@@ -21,6 +22,21 @@ public class HomeController(CatalogDbContext dbcontext, ICatalogService _catalog
         if (catalog == null)
             return StartPage();
         return View("Index",catalog);
+    }
+    [Route("/download")]
+    public IActionResult UploadCatalogs()
+    {
+        string fileNameZip = $"Structure_Snapshot_{DateTime.Now}.zip";
+        byte[] compressedBytes;
+        using (var outStream = new MemoryStream())
+        {
+            using (var archive = new ZipArchive(outStream, ZipArchiveMode.Create, true))
+            {
+                dbcontext.Catalogs.ToList().ForEach(cat=>archive.CreateEntry(_catalogService.GetPath(cat,true)));
+            }
+            compressedBytes = outStream.ToArray();
+        }
+        return File(compressedBytes, System.Net.Mime.MediaTypeNames.Application.Octet, fileNameZip);
     }
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public IActionResult Error()

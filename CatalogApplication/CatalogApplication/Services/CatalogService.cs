@@ -6,7 +6,7 @@ namespace CatalogApplication.Services;
 
 public class  CatalogService : ICatalogService
 {
-    public string GetPath(Catalog? catalog)
+    public string GetPath(Catalog? catalog, bool finalslash = false)
     {
         var path = new StringBuilder(catalog.Name);
         if (catalog.Parent != null)
@@ -18,6 +18,9 @@ public class  CatalogService : ICatalogService
                 current = current.Parent;
             }
         }
-        return path.ToString();
+
+        if (!finalslash)
+            return path.ToString();
+        return path.ToString() + "/";
     }
 }
