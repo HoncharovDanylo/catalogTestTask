@@ -4,5 +4,5 @@ namespace CatalogApplication.Interfaces;
 
 public interface ICatalogService
 {
-    string GetPath(Catalog catalog, bool finalslash = false);
+    string GetPath(Catalog catalog);
 }
