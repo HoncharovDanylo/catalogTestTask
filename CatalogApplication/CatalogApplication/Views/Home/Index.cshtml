@@ -1,5 +1,4 @@
-﻿@using System.Web
-@using CatalogApplication.Controllers
+﻿@using CatalogApplication.Controllers
 @model Catalog
 @{
     ViewData["Title"] = "Home Page";
@@ -9,12 +8,20 @@
 <ul>
     @foreach (var catalog in @Model.ChildCatalogs)
     {
-        <li><a href="@Context.Request.Path/@catalog.Name">@catalog.Name</a></li>
+        if (Context.Request.Path != "/")
+        {
+            <li><a href="@Context.Request.Path/@catalog.Name">@catalog.Name</a></li>
+        }
+        else
+        {
+            <li><a href="/@catalog.Name">@catalog.Name</a></li>
+        }
+
         @* <li>@Html.ActionLink(@catalog.Name,"ShowCatalog",new{path = +"/"+catalog.Name})</li> *@
     }
 </ul>
 
-@if (Model.Parent != null)
+@if (Context.Request.Path!="/")
 {
     <div>
     <a href="@HomeController.RollBackPath(Context.Request.Path)">Back</a>
@@ -23,6 +30,10 @@
     </div>
 }
 <div>
-    <input id="design" type="file" webkitdirectory = "true" directory/>
+    @using (Html.BeginForm("UploadCatalogs", "Home", FormMethod.Post, new {enctype="multipart/form-data"}))
+    {
+        <input id="design" name="file" type="file" accept=".zip,application/zip,application/x-zip,application/x-zip-compressed"/>
+        <input type="submit"/>
+    }
     <a href="/download">Download current structure</a>
 </div>

@@ -11,6 +11,7 @@ namespace CatalogApplication.Controllers;
 
 public class HomeController(CatalogDbContext dbcontext, ICatalogService _catalogService) : Controller
 {
+    [HttpGet]
     [Route("/{*path}")]
     public IActionResult ShowCatalog(string? path)
     {
@@ -38,10 +39,29 @@ public class HomeController(CatalogDbContext dbcontext, ICatalogService _catalog
         }
         return File(compressedBytes, System.Net.Mime.MediaTypeNames.Application.Octet, fileNameZip);
     }
-
-    public IActionResult UploadCatalogs()
+    [HttpPost]
+    [Route("/{*path}")]
+    public async Task<IActionResult> UploadCatalogs(IFormFile file)
     {
-        return Ok();
+       var oldStructure = this.DownloadCatalogs();
+       dbcontext.Catalogs.RemoveRange(dbcontext.Catalogs.Where(c=>true));
+      var listOfNewCatalogs = new List<Catalog>();
+        using (ZipArchive archive = new ZipArchive(file.OpenReadStream()))
+        {
+            foreach (ZipArchiveEntry entry in archive.Entries)
+            {
+                var catalogs = entry.ToString().Split('/',StringSplitOptions.RemoveEmptyEntries);
+                var catalog = new Catalog()
+                {
+                    Name = catalogs[catalogs.Length-1],
+                    Parent = listOfNewCatalogs.FirstOrDefault(cat=> _catalogService.GetPath(cat) == string.Join('/',catalogs,0,catalogs.Length-1))
+                };
+                listOfNewCatalogs.Add(catalog);
+            }
+            dbcontext.Catalogs.AddRange(listOfNewCatalogs);
+            dbcontext.SaveChanges();
+        }
+        return oldStructure;
     }
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public IActionResult Error()
@@ -51,8 +71,9 @@ public class HomeController(CatalogDbContext dbcontext, ICatalogService _catalog
 
     private IActionResult StartPage()
     {
-        var initCatalog = dbcontext.Catalogs.FirstOrDefault(cat => cat.ParentId == null);
-        return LocalRedirect($"/{initCatalog.Name}");
+        var startcatalogs = dbcontext.Catalogs.Where(cat => cat.ParentId == null).ToList();
+        Catalog init = new Catalog() { Name = String.Empty, ChildCatalogs = startcatalogs, Parent = null };
+        return View("Index",init);
     }
 
     [NonAction]
@@ -60,7 +81,6 @@ public class HomeController(CatalogDbContext dbcontext, ICatalogService _catalog
     {
         var folds = path.Split('/');
         string newpath = string.Join('/', folds, 0, folds.Length - 1);
-        return newpath;
-
+        return newpath == String.Empty ? "/" : newpath;
     }
 }
