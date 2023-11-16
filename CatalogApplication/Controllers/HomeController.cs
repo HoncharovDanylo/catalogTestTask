@@ -46,25 +46,35 @@ public class HomeController(CatalogDbContext dbcontext, ICatalogService catalogS
     [Route("/{*path}")]
     public async Task<IActionResult> UploadCatalogs(IFormFile file)
     {
-       var oldStructure = this.DownloadCatalogs();
-       dbcontext.Catalogs.RemoveRange(dbcontext.Catalogs.Where(c=>true));
-      var listOfNewCatalogs = new List<Catalog>();
-        using (ZipArchive archive = new ZipArchive(file.OpenReadStream()))
+        if (file != null)
         {
-            foreach (ZipArchiveEntry entry in archive.Entries)
-            {
-                var catalogs = entry.ToString().Split('/',StringSplitOptions.RemoveEmptyEntries);
-                var catalog = new Catalog()
-                {
-                    Name = catalogs[^1],
-                    Parent = listOfNewCatalogs.FirstOrDefault(cat=> catalogService.GetPath(cat) == string.Join('/',catalogs,0,catalogs.Length-1))
-                };
-                listOfNewCatalogs.Add(catalog);
-            }
-            await dbcontext.Catalogs.AddRangeAsync(listOfNewCatalogs);
+            var oldStructure = await this.DownloadCatalogs();
+            var oldcatalogs = await dbcontext.Catalogs.ToListAsync();
+            dbcontext.Catalogs.RemoveRange(oldcatalogs);
             await dbcontext.SaveChangesAsync();
+            var listOfNewCatalogs = new List<Catalog>();
+            using (ZipArchive archive = new ZipArchive(file.OpenReadStream()))
+            {
+                foreach (ZipArchiveEntry entry in archive.Entries)
+                {
+                    var catalogs = entry.ToString().Split('/', StringSplitOptions.RemoveEmptyEntries);
+                    var catalog = new Catalog()
+                    {
+                        Name = catalogs[^1],
+                        Parent = listOfNewCatalogs.FirstOrDefault(cat =>
+                            catalogService.GetPath(cat) == string.Join('/', catalogs, 0, catalogs.Length - 1))
+                    };
+                    listOfNewCatalogs.Add(catalog);
+                }
+
+                await dbcontext.Catalogs.AddRangeAsync(listOfNewCatalogs);
+                await dbcontext.SaveChangesAsync();
+            }
+
+            return oldStructure;
         }
-        return await oldStructure;
+
+        return BadRequest("file is empty");
     }
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public IActionResult Error()
