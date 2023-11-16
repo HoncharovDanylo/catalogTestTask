@@ -38,6 +38,11 @@ public class HomeController(CatalogDbContext dbcontext, ICatalogService _catalog
         }
         return File(compressedBytes, System.Net.Mime.MediaTypeNames.Application.Octet, fileNameZip);
     }
+
+    public IActionResult UploadCatalogs()
+    {
+        return Ok();
+    }
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public IActionResult Error()
     {
