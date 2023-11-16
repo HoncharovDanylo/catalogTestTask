@@ -34,11 +34,12 @@ public class HomeController(CatalogDbContext dbcontext, ICatalogService _catalog
         return LocalRedirect($"/{initCatalog.Name}");
     }
 
-    public IActionResult RollBack(string path)
+    [NonAction]
+    public static string RollBackPath(string path)
     {
         var folds = path.Split('/');
         string newpath = string.Join('/', folds, 0, folds.Length - 1);
-        return RedirectToAction("ShowCatalog", new { path = newpath });
+        return newpath;
 
     }
 }
