@@ -9,23 +9,25 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CatalogApplication.Controllers;
 
-public class HomeController(CatalogDbContext dbcontext, ICatalogService _catalogService) : Controller
+public class HomeController(CatalogDbContext dbcontext, ICatalogService catalogService) : Controller
 {
     [HttpGet]
     [Route("/{*path}")]
-    public IActionResult ShowCatalog(string? path)
+    public async  Task<IActionResult> ShowCatalog(string? path)
     {
         path = HttpUtility.UrlDecode(path);
         if (path == null)
-            return StartPage();
-        var catalog = dbcontext.Catalogs.Include(cat=>cat.ChildCatalogs).Include(cat=>cat.Parent).ToList().FirstOrDefault(cat => _catalogService.GetPath(cat) == path);
+            return await StartPage();
+        var catalogs = await dbcontext.Catalogs.Include(cat => cat.ChildCatalogs).Include(cat => cat.Parent)
+            .ToListAsync();
+            var catalog = catalogs.FirstOrDefault(cat => catalogService.GetPath(cat) == path);
         if (catalog == null)
-            return StartPage();
+            return await StartPage();
         return View("Index",catalog);
     }
     
     [Route("/download")]
-    public IActionResult DownloadCatalogs()
+    public async Task<IActionResult> DownloadCatalogs()
     {
         string fileNameZip = $"Structure_Snapshot_{DateTime.Now}.zip";
         byte[] compressedBytes;
@@ -33,7 +35,8 @@ public class HomeController(CatalogDbContext dbcontext, ICatalogService _catalog
         {
             using (var archive = new ZipArchive(outStream, ZipArchiveMode.Create, true))
             {
-                dbcontext.Catalogs.ToList().ForEach(cat=>archive.CreateEntry(_catalogService.GetPath(cat)+"/"));
+                var catalogs = await dbcontext.Catalogs.ToListAsync();
+                  catalogs.ForEach(cat=>archive.CreateEntry(catalogService.GetPath(cat)+"/"));
             }
             compressedBytes = outStream.ToArray();
         }
@@ -53,15 +56,15 @@ public class HomeController(CatalogDbContext dbcontext, ICatalogService _catalog
                 var catalogs = entry.ToString().Split('/',StringSplitOptions.RemoveEmptyEntries);
                 var catalog = new Catalog()
                 {
-                    Name = catalogs[catalogs.Length-1],
-                    Parent = listOfNewCatalogs.FirstOrDefault(cat=> _catalogService.GetPath(cat) == string.Join('/',catalogs,0,catalogs.Length-1))
+                    Name = catalogs[^1],
+                    Parent = listOfNewCatalogs.FirstOrDefault(cat=> catalogService.GetPath(cat) == string.Join('/',catalogs,0,catalogs.Length-1))
                 };
                 listOfNewCatalogs.Add(catalog);
             }
-            dbcontext.Catalogs.AddRange(listOfNewCatalogs);
-            dbcontext.SaveChanges();
+            await dbcontext.Catalogs.AddRangeAsync(listOfNewCatalogs);
+            await dbcontext.SaveChangesAsync();
         }
-        return oldStructure;
+        return await oldStructure;
     }
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public IActionResult Error()
@@ -69,9 +72,9 @@ public class HomeController(CatalogDbContext dbcontext, ICatalogService _catalog
         return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
     }
 
-    private IActionResult StartPage()
+    private async Task<IActionResult> StartPage()
     {
-        var startcatalogs = dbcontext.Catalogs.Where(cat => cat.ParentId == null).ToList();
+        var startcatalogs = await dbcontext.Catalogs.Where(cat => cat.ParentId == null).ToListAsync();
         Catalog init = new Catalog() { Name = String.Empty, ChildCatalogs = startcatalogs, Parent = null };
         return View("Index",init);
     }
