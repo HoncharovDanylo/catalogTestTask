@@ -78,12 +78,5 @@ public class HomeController(CatalogDbContext dbcontext, ICatalogService catalogS
         Catalog init = new Catalog() { Name = String.Empty, ChildCatalogs = startcatalogs, Parent = null };
         return View("Index",init);
     }
-
-    [NonAction]
-    public static string RollBackPath(string path)
-    {
-        var folds = path.Split('/');
-        string newpath = string.Join('/', folds, 0, folds.Length - 1);
-        return newpath == String.Empty ? "/" : newpath;
-    }
+    
 }

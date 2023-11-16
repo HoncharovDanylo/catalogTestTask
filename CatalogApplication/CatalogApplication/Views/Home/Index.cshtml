@@ -1,4 +1,6 @@
 ﻿@using CatalogApplication.Controllers
+@using CatalogApplication.Interfaces
+@inject ICatalogService CatalogService
 @model Catalog
 @{
     ViewData["Title"] = "Home Page";
@@ -24,13 +26,14 @@
 @if (Context.Request.Path!="/")
 {
     <div>
-    <a href="@HomeController.RollBackPath(Context.Request.Path)">Back</a>
+    <a href="@CatalogService.RollBackPath(Context.Request.Path)">Back</a>
     <span>|</span>
     <a href="/">To Root</a>;
     </div>
 }
 <div>
-    @using (Html.BeginForm("UploadCatalogs", "Home", FormMethod.Post, new {enctype="multipart/form-data"}))
+    <h5>Upload your scheme</h5>
+    @using (Html.BeginForm("UploadCatalogs", "Home", FormMethod.Post, new { enctype = "multipart/form-data" }))
     {
         <input id="design" name="file" type="file" accept=".zip,application/zip,application/x-zip,application/x-zip-compressed"/>
         <input type="submit"/>

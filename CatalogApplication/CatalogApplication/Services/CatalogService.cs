@@ -20,4 +20,10 @@ public class  CatalogService : ICatalogService
         }
             return path.ToString();
     }
+    public  string RollBackPath(string path)
+    {
+        var folds = path.Split('/');
+        string newpath = string.Join('/', folds, 0, folds.Length - 1);
+        return newpath == String.Empty ? "/" : newpath;
+    }
 }
